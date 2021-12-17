@@ -1,4 +1,6 @@
-import { resolve } from 'dns';
+// import { resolve } from 'dns';
+
+import { Answer } from './Answer';
 
 export interface QuestionData {
   questionId: number;
@@ -6,10 +8,10 @@ export interface QuestionData {
   content: string;
   userName: string;
   created: Date;
-  answers: AnserData[];
+  answers: AnswerData[];
 }
 
-export interface AnserData {
+export interface AnswerData {
   answerId: number;
   content: string;
   userName: string;
@@ -69,6 +71,11 @@ export const getUnansweredQuestions = async (): Promise<QuestionData[]> => {
   return questions.filter((q) => q.answers.length === 0);
 };
 
+export const getAnsweredQuestions = async (): Promise<QuestionData[]> => {
+  await wait(900);
+  return questions.filter((q) => q.answers.length > 0);
+};
+
 const wait = (ms: number): Promise<void> => {
   return new Promise((resolve) => setTimeout(resolve, ms));
 };
@@ -79,4 +86,55 @@ export const getQuestion = async (
   await wait(500);
   const results = questions.filter((q) => q.questionId === questionId);
   return results.length === 0 ? null : results[0];
+};
+
+export const searchQuestions = async (
+  critera: string,
+): Promise<QuestionData[]> => {
+  await wait(500);
+  return questions.filter(
+    (q) =>
+      q.title.toLowerCase().indexOf(critera.toLowerCase()) >= 0 ||
+      q.content.toLowerCase().indexOf(critera.toLowerCase()) >= 0,
+  );
+};
+
+export interface PostQuestionData {
+  title: string;
+  content: string;
+  userName: string;
+  created: Date;
+}
+
+export const postQuestion = async (
+  question: PostQuestionData,
+): Promise<QuestionData | undefined> => {
+  await wait(500);
+  const questionId = Math.max(...questions.map((q) => q.questionId)) + 1;
+  const newQuestion: QuestionData = {
+    ...question,
+    questionId,
+    answers: [],
+  };
+  questions.push(newQuestion);
+  return newQuestion;
+};
+
+export interface PostAnswerData {
+  questionId: number;
+  content: string;
+  userName: string;
+  created: Date;
+}
+
+export const postAnswer = async (
+  answer: PostAnswerData,
+): Promise<AnswerData | undefined> => {
+  await wait(500);
+  const question = questions.filter(
+    (q) => q.questionId === answer.questionId,
+  )[0];
+  const answerInQuestion: AnswerData = { answerId: 99, ...answer };
+  question.answers.push(answerInQuestion);
+  return answerInQuestion;
 };
